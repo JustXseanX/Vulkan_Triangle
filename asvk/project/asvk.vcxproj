@@ -143,6 +143,7 @@
     <ClCompile Include="..\src\asvkQueue.cpp" />
     <ClCompile Include="..\src\asvkRandom.cpp" />
     <ClCompile Include="..\src\asvkRenderBuffer.cpp" />
+    <ClCompile Include="..\src\asvkResource.cpp" />
     <ClCompile Include="..\src\asvkResTexture.cpp" />
     <ClCompile Include="..\src\asvkSwapChain.cpp" />
     <ClCompile Include="..\src\formats\asvkResDDS.cpp" />
@@ -164,6 +165,7 @@
     <ClInclude Include="..\include\asvkMisc.h" />
     <ClInclude Include="..\include\asvkQueue.h" />
     <ClInclude Include="..\include\asvkRef.h" />
+    <ClInclude Include="..\include\asvkResource.h" />
     <ClInclude Include="..\include\asvkResTexture.h" />
     <ClInclude Include="..\include\asvkStepTimer.h" />
     <ClInclude Include="..\include\asvkSwapChain.h" />

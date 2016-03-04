@@ -123,7 +123,7 @@ bool BoundingBox::Contains( const Vector3& point ) const
 //      点群が含まれるかどうかチェックします.
 //-------------------------------------------------------------------------------------------------
 ASVK_INLINE
-bool BoundingBox::Contains( const Vector3* pVertices, const uint32_t count ) const
+bool BoundingBox::Contains( const Vector3* pVertices, uint32_t count ) const
 {
     for( auto i=0u; i<count; ++i )
     {
@@ -202,7 +202,7 @@ BoundingSphere::BoundingSphere()
 //      引数付きコンストラクタです.
 //--------------------------------------------------------------------------------------------------
 ASVK_INLINE
-BoundingSphere::BoundingSphere( const Vector3& _center, const float _radius )
+BoundingSphere::BoundingSphere( const Vector3& _center, float _radius )
 : center( _center )
 , radius( _radius )
 { /* DO_NOTHING */ }
@@ -240,7 +240,7 @@ bool BoundingSphere::Contains( const Vector3& point ) const
 //      点群を含むかどうかチェックします.
 //-------------------------------------------------------------------------------------------------
 ASVK_INLINE
-bool BoundingSphere::Contains( const Vector3* pVertices, const uint32_t count ) const
+bool BoundingSphere::Contains( const Vector3* pVertices, uint32_t count ) const
 {
     auto r2 = radius * radius;
     for( auto i=0u; i<count; ++i )
@@ -435,7 +435,7 @@ bool ViewFrustum::Contains( const Vector3& point ) const
 //      点群が含まれるかどうかチェックします.
 //-------------------------------------------------------------------------------------------------
 ASVK_INLINE
-bool ViewFrustum::Contains( const Vector3* pVertices, const uint32_t count ) const
+bool ViewFrustum::Contains( const Vector3* pVertices, uint32_t count ) const
 {
     auto behindLeft   = 0;
     auto behindRight  = 0;

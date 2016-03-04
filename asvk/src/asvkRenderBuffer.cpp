@@ -27,8 +27,8 @@ void SetImageLayout
     VkImageSubresourceRange range
 )
 {
-    assert(device        != nullptr);
-    assert(commandBuffer != nullptr);
+    assert(device        != null_handle);
+    assert(commandBuffer != null_handle);
 
     VkImageMemoryBarrier barrier = {};
     barrier.sType            = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -77,9 +77,8 @@ namespace asvk {
 //      コンストラクタです.
 //-------------------------------------------------------------------------------------------------
 RenderBuffer::RenderBuffer()
-: m_Image   (VK_NULL_HANDLE)
-, m_View    (VK_NULL_HANDLE)
-, m_Memory  (VK_NULL_HANDLE)
+: m_Resource()
+, m_View    (null_handle)
 { /* DO_NOTHING */ }
 
 //-------------------------------------------------------------------------------------------------
@@ -98,7 +97,7 @@ bool RenderBuffer::Init
     const RenderBufferDesc* pDesc
 )
 {
-    if (pDeviceMgr == nullptr || commandBuffer == nullptr || pDesc == nullptr)
+    if (pDeviceMgr == nullptr || commandBuffer == null_handle || pDesc == nullptr)
     {
         ELOG("Error : Invalid Argument.");
         return false;
@@ -152,54 +151,13 @@ bool RenderBuffer::Init
     info.sharingMode            = VK_SHARING_MODE_EXCLUSIVE;
     info.initialLayout          = VK_IMAGE_LAYOUT_UNDEFINED;
 
-    auto result = vkCreateImage(device, &info, nullptr, &m_Image);
-    if (result != VK_SUCCESS)
+    if (!m_Resource.Init(device, memoryProp, &info))
     {
-        ELOG("Error : vkCreatImage() Failed.");
+        ELOG( "Error : Resource::Init() Failed." );
         return false;
     }
 
-    VkMemoryRequirements requirements;
-    vkGetImageMemoryRequirements(device, m_Image, &requirements);
-
-    VkFlags requirementsMask = 0;
-    uint32_t typeBits  = requirements.memoryTypeBits;
-    uint32_t typeIndex = 0;
-    for (auto i=0u; i<32; ++i)
-    {
-        auto& propFlags = memoryProp.memoryTypes[i].propertyFlags;
-        if ((typeBits & 0x1) == 0x1)
-        {
-            if ((propFlags & requirementsMask) == requirementsMask)
-            {
-                typeIndex = i;
-                break;
-            }
-        }
-        typeBits >>= 1;
-    }
-
-    VkMemoryAllocateInfo allocInfo = {};
-    allocInfo.sType             = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocInfo.pNext             = nullptr;
-    allocInfo.allocationSize    = requirements.size;
-    allocInfo.memoryTypeIndex   = typeIndex;
-
-    result = vkAllocateMemory(device, &allocInfo, nullptr, &m_Memory);
-    if (result != VK_SUCCESS)
-    {
-        ELOG( "Error : vkAllocateMemory() Failed." );
-        return false;
-    }
-
-    result = vkBindImageMemory(device, m_Image, m_Memory, 0);
-    if (result != VK_SUCCESS)
-    {
-        ELOG( "Error : vkBindImageMemory() Failed." );
-        return false;
-    }
-
-    VkImageViewType viewType = VK_IMAGE_VIEW_TYPE_2D;
+    auto viewType = VK_IMAGE_VIEW_TYPE_2D;
     if (pDesc->Dimension == VK_IMAGE_TYPE_1D)
     {
         if(pDesc->ArraySize > 1)
@@ -227,7 +185,7 @@ bool RenderBuffer::Init
     viewInfo.sType            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewInfo.pNext            = nullptr;
     viewInfo.flags            = 0;
-    viewInfo.image            = m_Image;
+    viewInfo.image            = m_Resource.GetImage();
     viewInfo.viewType         = viewType;
     viewInfo.format           = pDesc->Format;
     viewInfo.components.r     = VK_COMPONENT_SWIZZLE_R;
@@ -236,7 +194,7 @@ bool RenderBuffer::Init
     viewInfo.components.a     = VK_COMPONENT_SWIZZLE_A;
     viewInfo.subresourceRange = m_Range;
 
-    result = vkCreateImageView(device, &viewInfo, nullptr, &m_View);
+    auto result = vkCreateImageView(device, &viewInfo, nullptr, &m_View);
     if (result != VK_SUCCESS)
     {
         ELOG( "Error : vkCreateImageView() Failed." );
@@ -246,7 +204,7 @@ bool RenderBuffer::Init
     SetImageLayout(
         device,
         commandBuffer,
-        m_Image,
+        m_Resource.GetImage(),
         VK_IMAGE_LAYOUT_UNDEFINED,
         imageLayout,
         m_Range);
@@ -265,24 +223,18 @@ void RenderBuffer::Term(DeviceMgr* pDeviceMgr)
     { return; }
 
     auto device = pDeviceMgr->GetDevice();
-    if (device == nullptr)
+    if (device == null_handle)
     { return; }
 
-    if (m_View != VK_NULL_HANDLE)
+    if (m_View != null_handle)
     { vkDestroyImageView(device, m_View, nullptr); }
 
-    if (m_Image != VK_NULL_HANDLE)
-    { vkDestroyImage(device, m_Image, nullptr); }
-
-    if (m_Memory != VK_NULL_HANDLE)
-    { vkFreeMemory(device, m_Memory, nullptr); }
+    m_Resource.Term(device);
 
     memset(&m_Desc,  0, sizeof(m_Desc));
     memset(&m_Range, 0, sizeof(m_Range));
 
-    m_Memory = VK_NULL_HANDLE;
-    m_View   = VK_NULL_HANDLE;
-    m_Image  = VK_NULL_HANDLE;
+    m_View = null_handle;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -292,16 +244,10 @@ const RenderBufferDesc& RenderBuffer::GetDesc() const
 { return m_Desc; }
 
 //-------------------------------------------------------------------------------------------------
-//      イメージを取得します.
+//      リソースを取得します.
 //-------------------------------------------------------------------------------------------------
-VkImage RenderBuffer::GetImage() const
-{ return m_Image; }
-
-//-------------------------------------------------------------------------------------------------
-//      デバイスメモリを取得します.
-//-------------------------------------------------------------------------------------------------
-VkDeviceMemory RenderBuffer::GetDeviceMemory() const
-{ return m_Memory; }
+ImageResource* RenderBuffer::GetResource()
+{ return &m_Resource; }
 
 //-------------------------------------------------------------------------------------------------
 //      イメージビューを取得します.

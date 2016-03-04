@@ -211,7 +211,7 @@ protected:
     VkFramebuffer               m_FrameBuffer[ChainCount];  //!< フレームバッファです. 
     VkViewport                  m_Viewport;                 //!< ビューポートです.
     VkRect2D                    m_Scissor;                  //!< シザー矩形です.
-    VkRenderPass                m_RenderPass;               //!< デフォルトのレンダーパスです.
+    VkRenderPass                m_RenderPass;               //!< レンダーパスです.
 
     //=============================================================================================
     // protected methods.

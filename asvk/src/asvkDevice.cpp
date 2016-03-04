@@ -61,21 +61,26 @@ void VKAPI_CALL Free(void* pUserData, void* pMemory)
     _aligned_free( pMemory );
 }
 
+//-------------------------------------------------------------------------------------------------
+//      デバッグリポートを行います.
+//-------------------------------------------------------------------------------------------------
 VKAPI_ATTR
-VkBool32 VKAPI_CALL DebugReportCallback
+VkBool32 VKAPI_CALL DebugReport
 (
-    VkFlags msgFlags,
-    VkDebugReportObjectTypeEXT objType,
-    uint64_t srcObject,
-    size_t location,
-    int32_t msgCode,
-    const char *pLayerPrefix,
-    const char *pMsg,
-    void *pUserData
+    VkFlags                     msgFlags,
+    VkDebugReportObjectTypeEXT  objType,
+    uint64_t                    srcObject,
+    size_t                      location,
+    int32_t                     msgCode,
+    const char*                 pLayerPrefix,
+    const char*                 pMsg,
+    void*                       pUserData
 )
 {
-    auto message = new char[strlen(pMsg) + 100];
-    assert(message != nullptr);
+    ASVK_UNUSED(objType);
+    ASVK_UNUSED(srcObject);
+    ASVK_UNUSED(location);
+    ASVK_UNUSED(pUserData);
 
     if (msgFlags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
     {
@@ -98,9 +103,22 @@ VkBool32 VKAPI_CALL DebugReportCallback
         "Info : [%s] Code %d : %s", pLayerPrefix, msgCode, pMsg);
     }
 
-    delete message;
     return false;
 }
+
+//-------------------------------------------------------------------------------------------------
+//      インスタンスプロシージャアドレスを取得します.
+//-------------------------------------------------------------------------------------------------
+ASVK_TEMPLATE(T)
+T GetProc(VkInstance instance, const char* name)
+{ return reinterpret_cast<T>(vkGetInstanceProcAddr(instance, name)); }
+
+//-------------------------------------------------------------------------------------------------
+//      デバイスプロシージャアドレスを取得します.
+//-------------------------------------------------------------------------------------------------
+ASVK_TEMPLATE(T)
+T GetProc(VkDevice device, const char* name)
+{ return reinterpret_cast<T>(vkGetDeviceProcAddr(device, name)); }
 
 } // namespace /* anonymous */
 
@@ -115,11 +133,16 @@ namespace asvk {
 //      コンストラクタです.
 //-------------------------------------------------------------------------------------------------
 DeviceMgr::DeviceMgr()
-: m_Instance        ( VK_NULL_HANDLE )
-, m_Device          ( VK_NULL_HANDLE )
+: m_Instance        ( null_handle )
+, m_Device          ( null_handle )
 , m_GraphicsQueue   ()
 , m_ComputeQueue    ()
-
+#if ASVK_IS_DEBUG
+, m_DebugReporter               ( null_handle )
+, m_CreateDebugReportCallback   ( nullptr )
+, m_DestroyDebugReportCallback  ( nullptr )
+, m_DebugReportMessage          ( nullptr )
+#endif
 { /* DO_NOTHING */ }
 
 //-------------------------------------------------------------------------------------------------
@@ -174,9 +197,12 @@ bool DeviceMgr::Init()
 
     #if ASVK_IS_DEBUG
     {
-        m_CreateDebugReportCallback  = (PFN_vkCreateDebugReportCallbackEXT) vkGetInstanceProcAddr(m_Instance, "vkCreateDebugReportCallbackEXT");
-        m_DestroyDebugReportCallback = (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(m_Instance, "vkDestroyDebugReportCallbackEXT");
-        m_DebugReportMessage         = (PFN_vkDebugReportMessageEXT)        vkGetInstanceProcAddr(m_Instance, "vkDebugReportMessageEXT");
+        m_CreateDebugReportCallback  = GetProc<PFN_vkCreateDebugReportCallbackEXT>
+                                            (m_Instance, "vkCreateDebugReportCallbackEXT");
+        m_DestroyDebugReportCallback = GetProc<PFN_vkDestroyDebugReportCallbackEXT>
+                                            (m_Instance, "vkDestroyDebugReportCallbackEXT");
+        m_DebugReportMessage         = GetProc<PFN_vkDebugReportMessageEXT>
+                                            (m_Instance, "vkDebugReportMessageEXT");
 
         if (m_CreateDebugReportCallback  != nullptr &&
             m_DestroyDebugReportCallback != nullptr &&
@@ -185,7 +211,7 @@ bool DeviceMgr::Init()
             VkDebugReportCallbackCreateInfoEXT info = {};
             info.sType          = VK_STRUCTURE_TYPE_DEBUG_REPORT_CREATE_INFO_EXT;
             info.pNext          = nullptr;
-            info.pfnCallback    = DebugReportCallback;
+            info.pfnCallback    = DebugReport;
             info.pUserData      = nullptr;
             info.flags          = VK_DEBUG_REPORT_ERROR_BIT_EXT 
                                 | VK_DEBUG_REPORT_WARNING_BIT_EXT
@@ -294,18 +320,18 @@ bool DeviceMgr::Init()
 void DeviceMgr::Term()
 {
     m_GraphicsQueue.Term(m_Device);
-    m_ComputeQueue.Term(m_Device);
+    m_ComputeQueue .Term(m_Device);
 
-    if (m_Device != VK_NULL_HANDLE)
+    if (m_Device != null_handle)
     { vkDestroyDevice(m_Device, nullptr); }
 
-    if (m_Instance != VK_NULL_HANDLE)
+    if (m_Instance != null_handle)
     { vkDestroyInstance(m_Instance, &m_Allocator); }
 
     m_PhysicalDevice.clear();
 
-    m_Device        = VK_NULL_HANDLE;
-    m_Instance      = VK_NULL_HANDLE;
+    m_Device   = null_handle;
+    m_Instance = null_handle;
 }
 
 //-------------------------------------------------------------------------------------------------

@@ -21,7 +21,9 @@ namespace asvk {
 //      コンストラクタです.
 //-------------------------------------------------------------------------------------------------
 Queue::Queue()
-: m_Queue       (nullptr)
+: m_Device      (null_handle)
+, m_Queue       (null_handle)
+, m_Fence       (null_handle)
 , m_FamiliyIndex(0)
 { /* DO_NOTHING */ }
 
@@ -66,12 +68,12 @@ bool Queue::Init(VkDevice device, uint32_t familyIndex, uint32_t queueIndex, Que
 //-------------------------------------------------------------------------------------------------
 void Queue::Term(VkDevice device)
 {
-    if (m_Fence != VK_NULL_HANDLE && device != VK_NULL_HANDLE)
+    if (m_Fence != null_handle && device != null_handle)
     { vkDestroyFence(device, m_Fence, nullptr); }
 
-    m_Device    = VK_NULL_HANDLE;
-    m_Fence     = VK_NULL_HANDLE;
-    m_Queue     = VK_NULL_HANDLE;
+    m_Device    = null_handle;
+    m_Fence     = null_handle;
+    m_Queue     = null_handle;
     m_FamiliyIndex = 0;
 }
 

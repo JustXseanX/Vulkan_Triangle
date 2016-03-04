@@ -161,8 +161,8 @@ struct BoundingBox
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 struct BoundingSphere
 {
-    Vector3   center;     //!< 中心座標です.
-    float       radius;     //!< 半径です.
+    Vector3 center;     //!< 中心座標です.
+    float   radius;     //!< 半径です.
 
     //---------------------------------------------------------------------------------------------
     //! @brief      コンストラクタです.
@@ -175,7 +175,7 @@ struct BoundingSphere
     //! @param[in]      _center     中心座標です.
     //! @param[in]      _radius     半径です.
     //---------------------------------------------------------------------------------------------
-    BoundingSphere( const Vector3& _center, const float _radius );
+    BoundingSphere( const Vector3& _center, float _radius );
 
     //---------------------------------------------------------------------------------------------
     //! @brief      引数付きコンストラクタです.
@@ -208,7 +208,7 @@ struct BoundingSphere
     //! @retval true    スフィア内です.
     //! @retval false   スフィア外です.
     //---------------------------------------------------------------------------------------------
-    bool Contains( const Vector3* pVertices, const uint32_t count ) const;
+    bool Contains( const Vector3* pVertices, uint32_t count ) const;
 
     //---------------------------------------------------------------------------------------------
     //! @brief      バウンディングボックスを含むか判定します.
@@ -334,7 +334,7 @@ public:
     //! @retval true    錐台内です.
     //! @retval fasle   錐台外です.
     //---------------------------------------------------------------------------------------------
-    bool Contains( const Vector3* pVertices, const uint32_t count ) const;
+    bool Contains( const Vector3* pVertices, uint32_t count ) const;
 
     //---------------------------------------------------------------------------------------------
     //! @brief      バウンディングスフィアを含むか判定します.

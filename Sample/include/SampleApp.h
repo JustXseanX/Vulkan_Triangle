@@ -21,11 +21,15 @@ struct Mesh
     VkVertexInputBindingDescription     Bindings;           //!< 入力バインディング設定.
     VkVertexInputAttributeDescription   Attributes[3];      //!< 入力属性設定.
 
+    //---------------------------------------------------------------------------------------------
+    //! @brief      コンストラクタです.
+    //---------------------------------------------------------------------------------------------
     Mesh()
-        : Buffer(VK_NULL_HANDLE)
-        , Memory(VK_NULL_HANDLE)
-    {}
+    : Buffer(null_handle)
+    , Memory(null_handle)
+    { /* DO_NOTHING */ }
 };
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 // SampleApp class

@@ -153,15 +153,15 @@ private:
     //=============================================================================================
     // private variables.
     //=============================================================================================
-    uint32_t                m_BufferIndex;
-    std::vector<Buffer>     m_Buffers;
-    VkSurfaceKHR            m_Surface;
-    VkSwapchainKHR          m_SwapChain;
-    VkDevice                m_Device;
-    VkSemaphore             m_Semaphore;
-    Queue*                  m_pQueue;
-    VkImageSubresourceRange m_Range;
-    SwapChainDesc           m_Desc;
+    uint32_t                m_BufferIndex;      //!< バッファインデックスです.
+    std::vector<Buffer>     m_Buffers;          //!< バッファです.
+    VkSurfaceKHR            m_Surface;          //!< サーフェイスです.
+    VkSwapchainKHR          m_SwapChain;        //!< スワップチェインです.
+    VkDevice                m_Device;           //!< デバイスです.
+    VkSemaphore             m_Semaphore;        //!< セマフォです.
+    Queue*                  m_pQueue;           //!< キューへのポインタです.
+    VkImageSubresourceRange m_Range;            //!< イメージサブリソースレンジです.
+    SwapChainDesc           m_Desc;             //!< 構成設定です.
 
     //=============================================================================================
     // private methods.

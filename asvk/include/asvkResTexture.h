@@ -18,11 +18,11 @@ namespace asvk {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 enum RESTEXTURE_DIMENSION
 {
-    RESTEXTURE_DIMENSION_UNKNOWN,
-    RESTEXTURE_DIMENSION_1D,
-    RESTEXTURE_DIMENSION_2D,
-    RESTEXTURE_DIMENSION_3D,
-    RESTEXTURE_DIMENSION_CUBE,
+    RESTEXTURE_DIMENSION_UNKNOWN,       //!< 未知形式です.
+    RESTEXTURE_DIMENSION_1D,            //!< 1次元テクスチャです.
+    RESTEXTURE_DIMENSION_2D,            //!< 2次元テクスチャです.
+    RESTEXTURE_DIMENSION_3D,            //!< 3次元テクスチャです.
+    RESTEXTURE_DIMENSION_CUBE,          //!< キューブマップです.
 };
 
 

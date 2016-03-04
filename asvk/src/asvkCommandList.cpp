@@ -21,7 +21,7 @@ namespace asvk {
 //      コンストラクタです.
 //-------------------------------------------------------------------------------------------------
 CommandList::CommandList()
-: m_CommandPool(VK_NULL_HANDLE)
+: m_CommandPool(null_handle)
 , m_BufferIndex(0)
 { /* DO_NOTHING */ }
 
@@ -97,7 +97,7 @@ bool CommandList::Init
 //-------------------------------------------------------------------------------------------------
 void CommandList::Term(DeviceMgr* pDeviceMgr)
 {
-    if (m_CommandPool != VK_NULL_HANDLE && !m_CommandBuffers.empty())
+    if (m_CommandPool != null_handle && !m_CommandBuffers.empty())
     {
         vkFreeCommandBuffers(
             pDeviceMgr->GetDevice(),
@@ -106,10 +106,10 @@ void CommandList::Term(DeviceMgr* pDeviceMgr)
             m_CommandBuffers.data());
     }
 
-    if (m_CommandPool != VK_NULL_HANDLE)
+    if (m_CommandPool != null_handle)
     { vkDestroyCommandPool(pDeviceMgr->GetDevice(), m_CommandPool, nullptr); }
 
-    m_CommandPool = VK_NULL_HANDLE;
+    m_CommandPool = null_handle;
     m_BufferIndex = 0;
     m_CommandBuffers.clear();
 }
@@ -121,10 +121,10 @@ bool CommandList::Reset()
 {
     VkCommandBufferInheritanceInfo inheritanceInfo = {};
     inheritanceInfo.sType                = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
-    inheritanceInfo.pNext                = VK_NULL_HANDLE;
-    inheritanceInfo.renderPass           = VK_NULL_HANDLE;
+    inheritanceInfo.pNext                = nullptr;
+    inheritanceInfo.renderPass           = null_handle;
     inheritanceInfo.subpass              = 0;
-    inheritanceInfo.framebuffer          = VK_NULL_HANDLE;
+    inheritanceInfo.framebuffer          = null_handle;
     inheritanceInfo.occlusionQueryEnable = VK_FALSE;
     inheritanceInfo.queryFlags           = 0;
     inheritanceInfo.pipelineStatistics   = 0;

@@ -39,9 +39,9 @@ struct Vertex
 SampleApp::SampleApp()
 : asvk::App(L"SampleApp", 960, 540, nullptr, nullptr, nullptr)
 , m_pQueue          ( nullptr )
-, m_PipelineLayout  ( VK_NULL_HANDLE )
-, m_PipelineCache   ( VK_NULL_HANDLE )
-, m_Pipeline        ( VK_NULL_HANDLE )
+, m_PipelineLayout  ( null_handle )
+, m_PipelineCache   ( null_handle )
+, m_Pipeline        ( null_handle )
 { /* DO_NOTHING */ }
 
 //-------------------------------------------------------------------------------------------------
@@ -202,18 +202,21 @@ bool SampleApp::OnInit()
         asvk::RefPtr<asvk::IBlob> blob;
         std::wstring path;
 
+        // ファイルパスを検索.
         if (!asvk::SearchFilePath(L"/res/SimpleVS.spv", path))
         {
             ELOG( "Error : File Not Found." );
             return false;
         }
 
+        // コンパイル済みバイナリを読み込み.
         if (!asvk::ReadFileToBlob(path.c_str(), blob.GetAddress()))
         {
             ELOG( "Error : Vertex Shader Load Failed." );
             return false;
         }
 
+        // シェーダモジュールの生成設定.
         VkShaderModuleCreateInfo info = {};
         info.sType      = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
         info.pNext      = nullptr;
@@ -221,6 +224,7 @@ bool SampleApp::OnInit()
         info.codeSize   = blob->GetBufferSize();
         info.pCode      = reinterpret_cast<uint32_t*>(blob->GetBufferPointer());
 
+        // シェーダモジュールを生成.
         auto result = vkCreateShaderModule(device, &info, nullptr, &vs);
         if (result != VK_SUCCESS)
         {
@@ -234,6 +238,7 @@ bool SampleApp::OnInit()
         asvk::RefPtr<asvk::IBlob> blob;
         std::wstring path;
 
+        // ファイルパスを検索.
         if (!asvk::SearchFilePath(L"res/SimpleFS.spv", path))
         {
             ELOG( "Error : File Not Found." );
@@ -241,6 +246,7 @@ bool SampleApp::OnInit()
             return false;
         }
      
+        // コンパイル済みバイナリを読み込み.
         if (!asvk::ReadFileToBlob(path.c_str(), blob.GetAddress()))
         {
             ELOG( "Error : Fragment Shader Load Failed." );
@@ -248,6 +254,7 @@ bool SampleApp::OnInit()
             return false;
         }
 
+        // シェーダモジュールの生成設定.
         VkShaderModuleCreateInfo info = {};
         info.sType      = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
         info.pNext      = nullptr;
@@ -255,6 +262,7 @@ bool SampleApp::OnInit()
         info.codeSize   = blob->GetBufferSize();
         info.pCode      = reinterpret_cast<uint32_t*>(blob->GetBufferPointer());
 
+        // シェーダモジュールを生成.
         auto result = vkCreateShaderModule(device, &info, nullptr, &fs);
         if (result != VK_SUCCESS)
         {
@@ -422,7 +430,7 @@ bool SampleApp::OnInit()
         pipelineInfo.layout                 = m_PipelineLayout;
         pipelineInfo.renderPass             = m_RenderPass;
         pipelineInfo.subpass                = 0;
-        pipelineInfo.basePipelineHandle     = VK_NULL_HANDLE;
+        pipelineInfo.basePipelineHandle     = null_handle;
         pipelineInfo.basePipelineIndex      = 0;
 
         // グラフィックスパイプラインの生成.
@@ -454,38 +462,41 @@ void SampleApp::OnTerm()
 
     // メッシュの破棄処理.
     {
-        if (m_Mesh.Memory != VK_NULL_HANDLE)
+        if (m_Mesh.Memory != null_handle)
         {
             vkFreeMemory(device, m_Mesh.Memory, nullptr); 
-            m_Mesh.Memory = VK_NULL_HANDLE;
+            m_Mesh.Memory = null_handle;
         }
 
-        if (m_Mesh.Buffer != VK_NULL_HANDLE)
+        if (m_Mesh.Buffer != null_handle)
         {
             vkDestroyBuffer(device, m_Mesh.Buffer, nullptr);
-            m_Mesh.Buffer = VK_NULL_HANDLE;
+            m_Mesh.Buffer = null_handle;
         }
 
         memset(&m_Mesh.Bindings,   0, sizeof(m_Mesh.Bindings));
         memset(&m_Mesh.Attributes, 0, sizeof(m_Mesh.Attributes));
     }
 
-    if (m_Pipeline != VK_NULL_HANDLE)
+    // パイプライン破棄.
+    if (m_Pipeline != null_handle)
     {
         vkDestroyPipeline(device, m_Pipeline, nullptr);
-        m_Pipeline = VK_NULL_HANDLE;
+        m_Pipeline = null_handle;
     }
 
-    if (m_PipelineLayout != VK_NULL_HANDLE)
+    // パイプラインレイアウト破棄.
+    if (m_PipelineLayout != null_handle)
     {
         vkDestroyPipelineLayout(device, m_PipelineLayout, nullptr);
-        m_PipelineLayout = VK_NULL_HANDLE;
+        m_PipelineLayout = null_handle;
     }
 
-    if (m_PipelineCache != VK_NULL_HANDLE)
+    // パイプラインキャッシュ破棄.
+    if (m_PipelineCache != null_handle)
     {
         vkDestroyPipelineCache(device, m_PipelineCache, nullptr);
-        m_PipelineCache = VK_NULL_HANDLE;
+        m_PipelineCache = null_handle;
     }
 
     m_pQueue = nullptr;
@@ -632,6 +643,7 @@ void SampleApp::BeginRenderPass(VkCommandBuffer commandBuffer)
     auto idx = m_SwapChain.GetBufferIndex();
     auto frameBuffer = m_FrameBuffer[idx];
 
+    // レンダーパスの開始設定.
     VkRenderPassBeginInfo info = {};
     info.sType                      = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     info.pNext                      = nullptr;

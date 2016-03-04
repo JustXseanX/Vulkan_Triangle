@@ -22,11 +22,11 @@ namespace asvk {
 //-------------------------------------------------------------------------------------------------
 SwapChain::SwapChain()
 : m_BufferIndex (0)
-, m_Surface     (VK_NULL_HANDLE)
-, m_SwapChain   (VK_NULL_HANDLE)
-, m_Device      (VK_NULL_HANDLE)
-, m_Semaphore   (VK_NULL_HANDLE)
-, m_pQueue      (VK_NULL_HANDLE)
+, m_Surface     (null_handle)
+, m_SwapChain   (null_handle)
+, m_Device      (null_handle)
+, m_Semaphore   (null_handle)
+, m_pQueue      (null_handle)
 { /* DO_NOTHING */ }
 
 //-------------------------------------------------------------------------------------------------
@@ -41,7 +41,7 @@ SwapChain::~SwapChain()
 bool SwapChain::Init(DeviceMgr* pDeviceMgr, VkCommandBuffer commandBuffer,const SwapChainDesc* pDesc)
 {
     // 引数チェック.
-    if (pDeviceMgr == nullptr || commandBuffer == nullptr || pDesc == nullptr)
+    if (pDeviceMgr == nullptr || commandBuffer == null_handle || pDesc == nullptr)
     {
         ELOG( "Error : Invalid Argument." );
         return false;
@@ -98,8 +98,8 @@ bool SwapChain::Init(DeviceMgr* pDeviceMgr, VkCommandBuffer commandBuffer,const 
         return false;
     }
 
-    VkFormat        imageFormat     = VK_FORMAT_UNDEFINED;
-    VkColorSpaceKHR imageColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
+    auto imageFormat     = VK_FORMAT_UNDEFINED;
+    auto imageColorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
 
     bool isFind = false;
     for(size_t i=0; i<formats.size(); ++i)
@@ -114,9 +114,10 @@ bool SwapChain::Init(DeviceMgr* pDeviceMgr, VkCommandBuffer commandBuffer,const 
         }
     }
 
+    // 見つからなかったら失敗とみなす.
     if (!isFind)
     {
-        ELOG( "Error : Specified Format Not Found." );
+        ELOG( "Error : Invalid Format or ColorSpace." );
         return false;
     }
 
@@ -137,9 +138,18 @@ bool SwapChain::Init(DeviceMgr* pDeviceMgr, VkCommandBuffer commandBuffer,const 
         { preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR; }
         else
         { preTransform = capabilities.currentTransform; }
+
+        // 最大スワップチェイン数をチェック.
+        if (capabilities.maxImageCount < pDesc->BufferCount)
+        {
+            ELOG( "Error : Invalid Buffer Count. Specified Buffer Count is %u, Maximum Buffer Count is %u.", 
+                 pDesc->BufferCount,
+                 capabilities.maxImageCount);
+            return false;
+        }
     }
 
-    VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
+    auto presentMode = VK_PRESENT_MODE_FIFO_KHR;
     {
         uint32_t presentModeCount;
         result = vkGetPhysicalDeviceSurfacePresentModesKHR(
@@ -203,9 +213,9 @@ bool SwapChain::Init(DeviceMgr* pDeviceMgr, VkCommandBuffer commandBuffer,const 
         createInfo.compositeAlpha           = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
         createInfo.presentMode              = presentMode;
         createInfo.clipped                  = VK_TRUE;
-        createInfo.oldSwapchain             = VK_NULL_HANDLE;
+        createInfo.oldSwapchain             = null_handle;
 
-        auto result = vkCreateSwapchainKHR(pDeviceMgr->GetDevice(), &createInfo, nullptr, &m_SwapChain);
+        result = vkCreateSwapchainKHR(pDeviceMgr->GetDevice(), &createInfo, nullptr, &m_SwapChain);
         if ( result != VK_SUCCESS )
         {
             ELOG( "Error : vkCreateSwapChainKHR() Failed." );
@@ -268,7 +278,7 @@ bool SwapChain::Init(DeviceMgr* pDeviceMgr, VkCommandBuffer commandBuffer,const 
             viewInfo.components.a     = VK_COMPONENT_SWIZZLE_A;
             viewInfo.subresourceRange = m_Range;
 
-            auto result = vkCreateImageView(pDeviceMgr->GetDevice(), &viewInfo, nullptr, &m_Buffers[i].View);
+            result = vkCreateImageView(pDeviceMgr->GetDevice(), &viewInfo, nullptr, &m_Buffers[i].View);
             if ( result != VK_SUCCESS )
             {
                 ELOG( "Error : vkCreateImageView() Failed." );
@@ -301,7 +311,7 @@ bool SwapChain::Init(DeviceMgr* pDeviceMgr, VkCommandBuffer commandBuffer,const 
         m_SwapChain,
         UINT64_MAX,
         m_Semaphore,
-        VK_NULL_HANDLE,
+        null_handle,
         &m_BufferIndex);
     if ( result != VK_SUCCESS )
     { 
@@ -329,27 +339,27 @@ void SwapChain::Term(DeviceMgr* pDeviceMgr)
 
     for(size_t i=0; i<m_Buffers.size(); ++i)
     {
-        if (m_Buffers[i].View != VK_NULL_HANDLE)
+        if (m_Buffers[i].View != null_handle)
         { vkDestroyImageView(pDeviceMgr->GetDevice(), m_Buffers[i].View, nullptr); }
     }
 
-    if (m_SwapChain != VK_NULL_HANDLE)
+    if (m_SwapChain != null_handle)
     { vkDestroySwapchainKHR(pDeviceMgr->GetDevice(), m_SwapChain, nullptr); }
 
-    if (m_Surface != VK_NULL_HANDLE)
+    if (m_Surface != null_handle)
     { vkDestroySurfaceKHR(pDeviceMgr->GetInstance(), m_Surface, nullptr); }
 
-    if (m_Semaphore != VK_NULL_HANDLE)
+    if (m_Semaphore != null_handle)
     { vkDestroySemaphore(pDeviceMgr->GetDevice(), m_Semaphore, nullptr); }
 
     memset(&m_Desc,  0, sizeof(m_Desc));
     memset(&m_Range, 0, sizeof(m_Range));
 
-    m_SwapChain = VK_NULL_HANDLE;
-    m_Surface   = VK_NULL_HANDLE;
-    m_pQueue    = VK_NULL_HANDLE;
-    m_Device    = VK_NULL_HANDLE;
-    m_Semaphore = VK_NULL_HANDLE;
+    m_SwapChain = null_handle;
+    m_Surface   = null_handle;
+    m_pQueue    = null_handle;
+    m_Device    = null_handle;
+    m_Semaphore = null_handle;
     m_Buffers.clear();
 }
 
@@ -397,7 +407,7 @@ void SwapChain::Present(uint64_t timeout)
         m_SwapChain,
         timeout,
         m_Semaphore,
-        VK_NULL_HANDLE,
+        null_handle,
         &m_BufferIndex);
     if ( result != VK_SUCCESS )
     { ELOG( "Error : vkAcquireNextImageKHR() Failed." ); }

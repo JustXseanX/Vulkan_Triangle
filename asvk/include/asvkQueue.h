@@ -18,8 +18,8 @@ namespace asvk {
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 enum QueueType
 {
-    QueueType_Graphics = 0,
-    QueueType_Compute,
+    QueueType_Graphics = 0,     //!< グラフィックス用途です.
+    QueueType_Compute,          //!< コンピュート用途です.
 };
 
 

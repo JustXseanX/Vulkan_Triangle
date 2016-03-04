@@ -50,7 +50,7 @@ AppList             g_AppList;
 //-------------------------------------------------------------------------------------------------
 // Constant Values
 //-------------------------------------------------------------------------------------------------
-static constexpr LPCWSTR WndClassName = L"asvkWindowClass";
+constexpr LPCWSTR WndClassName = L"asvkWindowClass";
 
 } // namespace /* anonymous */
 
@@ -91,10 +91,19 @@ App::App
 , m_ClearColor          ( 0.392156899f, 0.584313750f, 0.929411829f, 1.0f )
 , m_ClearDepth          ( 1.0f )
 , m_ClearStencil        ( 0 )
+, m_DeviceMgr           ()
+, m_CommandList         ()
+, m_SwapChain           ()
 , m_SwapChainFormat     ( VK_FORMAT_B8G8R8A8_UNORM )
+, m_DepthBuffer         ()
 , m_DepthFormat         ( VK_FORMAT_D24_UNORM_S8_UINT )
-, m_RenderPass          ( VK_NULL_HANDLE )
-{ /* DO_NOTHING */ }
+, m_RenderPass          ( null_handle )
+{
+    m_Viewport = { 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height) };
+    m_Scissor  = { 0, 0, width, height };
+    for(auto i=0u; i<ChainCount; ++i)
+    { m_FrameBuffer[i] = null_handle; }
+}
 
 //-------------------------------------------------------------------------------------------------
 //      デストラクタです.
@@ -343,6 +352,7 @@ bool App::InitVulkan()
         return false;
     }
 
+    // コマンドリストをリセットしておく.
     m_CommandList.Reset();
     auto cmd = m_CommandList.GetCurrentCommandBuffer();
 
@@ -513,7 +523,7 @@ bool App::InitVulkan()
         info.pSignalSemaphores      = nullptr;
 
         // コマンド実行.
-        auto result = vkQueueSubmit(pQueue, 1, &info, VK_NULL_HANDLE);
+        auto result = vkQueueSubmit(pQueue, 1, &info, null_handle);
         if ( result != VK_SUCCESS )
         {
             ELOG( "Error : vkQueueSubmit() Failed." );
@@ -546,14 +556,14 @@ void App::TermVulkan()
         if(auto device = m_DeviceMgr.GetDevice())
         {
             vkDestroyFramebuffer(device, m_FrameBuffer[i], nullptr);
-            m_FrameBuffer[i] = VK_NULL_HANDLE;
+            m_FrameBuffer[i] = null_handle;
         }
     }
 
-    if (m_RenderPass != nullptr)
+    if (m_RenderPass != null_handle)
     {
         vkDestroyRenderPass(m_DeviceMgr.GetDevice(), m_RenderPass, nullptr);
-        m_RenderPass = VK_NULL_HANDLE;
+        m_RenderPass = null_handle;
     }
 
     m_DepthBuffer.Term(&m_DeviceMgr);
@@ -654,7 +664,7 @@ void App::DoResizeEvent( const ResizeEventArgs& args )
     for(auto i=0u; i<ChainCount; ++i)
     {
         vkDestroyFramebuffer(m_DeviceMgr.GetDevice(), m_FrameBuffer[i], nullptr);
-        m_FrameBuffer[i] = VK_NULL_HANDLE;
+        m_FrameBuffer[i] = null_handle;
     }
     m_DepthBuffer.Term(&m_DeviceMgr);
     m_SwapChain  .Term(&m_DeviceMgr);
@@ -701,7 +711,7 @@ void App::DoResizeEvent( const ResizeEventArgs& args )
         info.sType              = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         info.pNext              = nullptr;
         info.flags              = 0;
-        info.renderPass         = VK_NULL_HANDLE;
+        info.renderPass         = m_RenderPass;
         info.attachmentCount    = 2;
         info.pAttachments       = attachments;
         info.width              = m_Width;
