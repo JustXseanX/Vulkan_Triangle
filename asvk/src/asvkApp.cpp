@@ -441,7 +441,7 @@ bool App::InitVulkan()
         info.sType              = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
         info.pNext              = nullptr;
         info.flags              = 0;
-        info.attachmentCount    = 1;
+        info.attachmentCount    = 2;
         info.pAttachments       = attachments;
         info.subpassCount       = 1;
         info.pSubpasses         = &subpass;
