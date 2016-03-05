@@ -371,7 +371,7 @@ bool SampleApp::OnInit()
         depthInfo.front                 = stencilOp;
         depthInfo.back                  = stencilOp;
         depthInfo.minDepthBounds        = 0.0f;
-        depthInfo.maxDepthBounds        = 1.0f;
+        depthInfo.maxDepthBounds        = 0.0f;
 
         // ブレンドアタッチメントの設定.
         VkPipelineColorBlendAttachmentState blendState = {};
