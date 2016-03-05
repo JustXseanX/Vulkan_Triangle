@@ -424,7 +424,7 @@ bool SampleApp::OnInit()
         pipelineInfo.pViewportState         = &viewportInfo;
         pipelineInfo.pRasterizationState    = &rasterizationInfo;
         pipelineInfo.pMultisampleState      = &multisampleInfo;
-        pipelineInfo.pDepthStencilState     = nullptr;
+        pipelineInfo.pDepthStencilState     = &depthInfo;
         pipelineInfo.pColorBlendState       = &blendInfo;
         pipelineInfo.pDynamicState          = &dynamicInfo;
         pipelineInfo.layout                 = m_PipelineLayout;
