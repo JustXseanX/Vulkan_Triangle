@@ -212,7 +212,7 @@ bool BufferResource::Init(VkDevice device, const VkBufferCreateInfo* pInfo)
         return false;
     }
 
-    return false;
+    return true;
 }
 
 //-------------------------------------------------------------------------------------------------
