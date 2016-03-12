@@ -3078,16 +3078,16 @@ Matrix::Matrix( const float* pf )
 ASVK_INLINE
 Matrix::Matrix
 (
-    float _f11, float _f12, float _f13, float _f14,
-    float _f21, float _f22, float _f23, float _f24,
-    float _f31, float _float, float _f33, float _f34,
-    float _f41, float _f42, float _f43, float _f44 
+    float m11, float m12, float m13, float m14,
+    float m21, float m22, float m23, float m24,
+    float m31, float m32, float m33, float m34,
+    float m41, float m42, float m43, float m44 
 )
 {
-    _11 = _f11; _12 = _f12; _13 = _f13; _14 = _f14;
-    _21 = _f21; _22 = _f22; _23 = _f23; _24 = _f24;
-    _31 = _f31; _32 = _float; _33 = _f33; _34 = _f34;
-    _41 = _f41; _42 = _f42; _43 = _f43; _44 = _f44;
+    _11 = m11; _12 = m12; _13 = m13; _14 = m14;
+    _21 = m21; _22 = m22; _23 = m23; _24 = m24;
+    _31 = m31; _32 = m32; _33 = m33; _34 = m34;
+    _41 = m41; _42 = m42; _43 = m43; _44 = m44;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -4247,8 +4247,8 @@ Matrix Matrix::CreatePerspective
 {
     assert( !IsZero( width ) );
     assert( !IsZero( height ) );
-    auto diff = nearClip - farClip;
-    assert( !IsZero( diff ) );
+    assert( !IsZero( nearClip - farClip ));
+    auto range = farClip / (nearClip - farClip);
 
     return Matrix(
         2.0f * nearClip / width, 
@@ -4263,12 +4263,12 @@ Matrix Matrix::CreatePerspective
 
         0.0f,
         0.0f,
-        farClip / diff,
-        (nearClip * farClip) / diff,
+        range,
+        -1.0f,
 
         0.0f,
         0.0f,
-        -1.0f,
+        range * nearClip,
         0.0f);
 }
 
@@ -4287,8 +4287,8 @@ void Matrix::CreatePerspective
 {
     assert( !IsZero( width ) );
     assert( !IsZero( height ) );
-    auto diff = nearClip - farClip;
-    assert( !IsZero( diff ) );
+    assert( !IsZero( nearClip - farClip ) );
+    auto range = farClip / (nearClip - farClip);
 
     result._11 = 2.0f * nearClip / width;
     result._12 = 0.0f;
@@ -4302,12 +4302,12 @@ void Matrix::CreatePerspective
 
     result._31 = 0.0f;
     result._32 = 0.0f;
-    result._33 = farClip / diff;
-    result._34 = (nearClip * farClip) / diff;
+    result._33 = range;
+    result._34 = -1.0f;
     
     result._41 = 0.0f;
     result._42 = 0.0f;
-    result._43 = -1.0f;
+    result._43 = range * nearClip;
     result._44 = 0.0f;
 }
 
@@ -4324,30 +4324,32 @@ Matrix Matrix::CreatePerspectiveFieldOfView
 )
 {
     assert( !IsZero( aspectRatio ) );
-    auto diff = nearClip - farClip;
-    assert( !IsZero( diff ) );
-    auto yScale = 1.0f / tanf( fieldOfView / 2.0f );
-    auto xScale = yScale / aspectRatio;
+    assert( !IsZero( nearClip - farClip ) );
+    auto sinFov = std::sin( 0.5f * fieldOfView );
+    auto cosFov = std::cos( 0.5f * fieldOfView );
+    auto height = cosFov / sinFov;
+    auto width  = height / aspectRatio;
+    auto range  = farClip / ( nearClip - farClip );
 
     return Matrix(
-        xScale,
+        width,
         0.0f,
         0.0f,
         0.0f,
 
         0.0f,
-        yScale,
+        height,
         0.0f,
         0.0f,
 
         0.0f,
         0.0f,
-        farClip / diff,
+        range,
         -1.0f,
 
         0.0f,
         0.0f,
-        (nearClip * farClip) / diff,
+        range * nearClip,
         0.0f );
 }
 
@@ -4365,29 +4367,31 @@ void Matrix::CreatePerspectiveFieldOfView
 )
 {
     assert( !IsZero( aspectRatio ) );
-    auto diff = nearClip - farClip;
-    assert( !IsZero( diff ) );
-    auto yScale = 1.0f / tanf( fieldOfView / 2.0f );
-    auto xScale = yScale / aspectRatio;
+    assert( !IsZero( nearClip - farClip ) );
+    auto sinFov = std::sin( 0.5f * fieldOfView );
+    auto cosFov = std::cos( 0.5f * fieldOfView );
+    auto height = cosFov / sinFov;
+    auto width  = height / aspectRatio;
+    auto range  = farClip / ( nearClip - farClip );
 
-    result._11 = xScale;
+    result._11 = width;
     result._12 = 0.0f;
     result._13 = 0.0f;
     result._14 = 0.0f;
 
     result._21 = 0.0f;
-    result._22 = yScale;
+    result._22 = height;
     result._23 = 0.0f;
     result._24 = 0.0f;
 
     result._31 = 0.0f;
     result._32 = 0.0f;
-    result._33 = farClip / diff;
+    result._33 = range;
     result._34 = -1.0f;
 
     result._41 = 0.0f;
     result._42 = 0.0f;
-    result._43 = (nearClip * farClip) / diff;
+    result._43 = range * nearClip;
     result._44 = 0.0f;
 }
 
@@ -4405,32 +4409,32 @@ Matrix Matrix::CreatePerspectiveOffCenter
     float farClip
 )
 {
-    auto diffRL = right - left;
-    auto diffTB = top - bottom;
-    auto diffNF = nearClip - farClip;
-    assert( !IsZero( diffRL ) );
-    assert( !IsZero( diffTB ) );
-    assert( !IsZero( diffNF ) );
+    auto width  = right - left;
+    auto height = top - bottom;
+    auto depth  = nearClip - farClip;
+    assert( !IsZero( width ) );
+    assert( !IsZero( height ) );
+    assert( !IsZero( depth ) );
 
     return Matrix(
-        2.0f * nearClip / diffRL,
+        2.0f * nearClip / width,
         0.0f,
         0.0f,
         0.0f,
 
         0.0f,
-        2.0f * nearClip / diffTB,
+        2.0f * nearClip / height,
         0.0f,
         0.0f,
 
-        (left + right) / diffRL,
-        (top + bottom) / diffTB,
-        farClip / diffNF,
+        (left + right) / width,
+        (top + bottom) / height,
+        farClip / depth,
         -1.0f,
 
         0.0f,
         0.0f,
-        nearClip * farClip/ diffNF,
+        nearClip * farClip/ depth,
         0.0f );
 }
 
@@ -4440,40 +4444,40 @@ Matrix Matrix::CreatePerspectiveOffCenter
 ASVK_INLINE
 void Matrix::CreatePerspectiveOffCenter
 (
-    float     left,
-    float     right,
-    float     bottom,
-    float     top,
-    float     nearClip,
-    float     farClip,
+    float   left,
+    float   right,
+    float   bottom,
+    float   top,
+    float   nearClip,
+    float   farClip,
     Matrix& result
 )
 {
-    auto diffRL = right - left;
-    auto diffTB = top - bottom;
-    auto diffNF = nearClip - farClip;
-    assert( !IsZero( diffRL ) );
-    assert( !IsZero( diffTB ) );
-    assert( !IsZero( diffNF ) );
+    auto width  = right - left;
+    auto height = top - bottom;
+    auto depth  = nearClip - farClip;
+    assert( !IsZero( width ) );
+    assert( !IsZero( height ) );
+    assert( !IsZero( depth ) );
 
-    result._11 = 2.0f * nearClip / diffRL;
+    result._11 = 2.0f * nearClip / width;
     result._12 = 0.0f;
     result._13 = 0.0f;
     result._14 = 0.0f;
 
     result._21 = 0.0f;
-    result._22 = 2.0f * nearClip / diffTB;
+    result._22 = 2.0f * nearClip / height;
     result._23 = 0.0f;
     result._24 = 0.0f;
 
-    result._31 = (left + right) / diffRL;
-    result._32 = (top + bottom) / diffTB;
-    result._33 = farClip / diffNF;
+    result._31 = (left + right) / width;
+    result._32 = (top + bottom) / height;
+    result._33 = farClip / depth;
     result._34 = -1.0f;
 
     result._41 = 0.0f;
     result._42 = 0.0f;
-    result._43 = nearClip * farClip/ diffNF;
+    result._43 = nearClip * farClip/ depth;
     result._44 = 0.0f;
 }
 
@@ -4491,8 +4495,8 @@ Matrix Matrix::CreateOrthographic
 {
     assert( !IsZero( width ) );
     assert( !IsZero( height ) );
-    auto diffNF = nearClip - farClip;
-    assert( !IsZero( diffNF ) );
+    assert( !IsZero( nearClip - farClip ) );
+    auto range = 1.0f / (nearClip - farClip);
 
     return Matrix(
         2.0f / width,
@@ -4507,12 +4511,12 @@ Matrix Matrix::CreateOrthographic
 
         0.0f,
         0.0f,
-        1.0f / diffNF,
+        range,
         0.0f,
 
         0.0f,
         0.0f,
-        nearClip / diffNF,
+        range * nearClip,
         1.0f );
 }
 
@@ -4522,17 +4526,17 @@ Matrix Matrix::CreateOrthographic
 ASVK_INLINE
 void Matrix::CreateOrthographic
 (
-    float     width,
-    float     height,
-    float     nearClip,
-    float     farClip,
+    float   width,
+    float   height,
+    float   nearClip,
+    float   farClip,
     Matrix& result
 )
 {
     assert( !IsZero( width ) );
     assert( !IsZero( height ) );
-    auto diffNF = nearClip - farClip;
-    assert( !IsZero( diffNF ) );
+    assert( !IsZero( nearClip - farClip ) );
+    auto range = 1.0f / (nearClip - farClip);
 
     result._11 = 2.0f / width;
     result._12 = 0.0f;
@@ -4546,12 +4550,12 @@ void Matrix::CreateOrthographic
 
     result._31 = 0.0f;
     result._32 = 0.0f;
-    result._33 = 1.0f / diffNF;
+    result._33 = range;
     result._34 = 0.0f;
 
     result._41 = 0.0f;
     result._42 = 0.0f;
-    result._43 = nearClip / diffNF;
+    result._43 = range * nearClip;
     result._44 = 1.0f;
 }
 
@@ -4592,8 +4596,8 @@ Matrix Matrix::CreateOrthographicOffCenter
         1.0f / depth,
         0.0f,
 
-        0.0f,
-        0.0f,
+        (left + right) / width,
+        (top + bottom) / height,
         nearClip / depth,
         1.0f
     );
@@ -4605,12 +4609,12 @@ Matrix Matrix::CreateOrthographicOffCenter
 ASVK_INLINE
 void Matrix::CreateOrthographicOffCenter
 (
-    float     left,
-    float     right,
-    float     bottom,
-    float     top,
-    float     nearClip,
-    float     farClip,
+    float   left,
+    float   right,
+    float   bottom,
+    float   top,
+    float   nearClip,
+    float   farClip,
     Matrix& result
 )
 {
@@ -4636,8 +4640,8 @@ void Matrix::CreateOrthographicOffCenter
     result._33 = 1.0f / depth;
     result._34 = 0.0f;
 
-    result._41 = 0.0f;
-    result._42 = 0.0f;
+    result._41 = (left + right) / width;
+    result._42 = (top + bottom) / height;
     result._43 = nearClip / depth;
     result._44 = 1.0f;
 }
