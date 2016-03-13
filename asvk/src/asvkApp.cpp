@@ -176,7 +176,7 @@ bool App::InitApp()
     // Vulkanの初期化.
     if ( !InitVulkan() )
     {
-        ELOG( "Error : InitD3D12() Failed." );
+        ELOG( "Error : InitVulkan() Failed." );
         return false;
     }
 
