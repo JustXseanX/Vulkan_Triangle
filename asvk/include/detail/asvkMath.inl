@@ -5198,18 +5198,22 @@ void Quaternion::SafeNormalize( const Quaternion& value, const Quaternion& set, 
 ASVK_INLINE
 Quaternion Quaternion::CreateFromYawPitchRoll( float yaw, float pitch, float roll )
 {
-    auto sr = sinf( roll  * 0.5f );
-    auto cr = cosf( roll  * 0.5f );
-    auto sp = sinf( pitch * 0.5f );
-    auto cp = cosf( pitch * 0.5f );
-    auto sy = sinf( yaw   * 0.5f );
-    auto cy = cosf( yaw   * 0.5f );
+    auto r = roll  * 0.5f;
+    auto p = pitch * 0.5f;
+    auto y = yaw   * 0.5f;
+    auto sr = sinf( r );
+    auto cr = cosf( r );
+    auto sp = sinf( p );
+    auto cp = cosf( p );
+    auto sy = sinf( y );
+    auto cy = cosf( y );
 
     return Quaternion(
-        -(sy * sp * cr) + (cy * cp * sr),
-         (cy * sp * cr) + (sy * cp * sr),
-        -(cy * sp * sr) + (sy * cp * cr),
-         (cy * cp * cr) + (sy * sp * sr) );
+        cy * sp * cr + sy * cp * sr,
+        sy * cp * cr - cy * sp * sr,
+        cy * cp * sr - sy * sp * cr,
+        cy * cp * cr + sy * sp * sr);
+
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -5218,17 +5222,20 @@ Quaternion Quaternion::CreateFromYawPitchRoll( float yaw, float pitch, float rol
 ASVK_INLINE
 void Quaternion::CreateFromYawPitchRoll( float yaw, float pitch, float roll, Quaternion& result )
 {
-    auto sr = sinf( roll  * 0.5f );
-    auto cr = cosf( roll  * 0.5f );
-    auto sp = sinf( pitch * 0.5f );
-    auto cp = cosf( pitch * 0.5f );
-    auto sy = sinf( yaw   * 0.5f );
-    auto cy = cosf( yaw   * 0.5f );
+    auto r = roll  * 0.5f;
+    auto p = pitch * 0.5f;
+    auto y = yaw   * 0.5f;
+    auto sr = sinf(r);
+    auto cr = cosf(r);
+    auto sp = sinf(p);
+    auto cp = cosf(p);
+    auto sy = sinf(y);
+    auto cy = cosf(y);
 
-    result.x = -(sy * sp * cr) + (cy * cp * sr);
-    result.y =  (cy * sp * cr) + (sy * cp * sr);
-    result.z = -(cy * sp * sr) + (sy * cp * cr);
-    result.w =  (cy * cp * cr) + (sy * sp * sr);
+    result.x = cy * sp * cr + sy * cp * sr;
+    result.y = sy * cp * cr - cy * sp * sr;
+    result.z = cy * cp * sr - sy * sp * cr;
+    result.w = cy * cp * cr + sy * sp * sr;
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -5362,6 +5369,76 @@ void Quaternion::CreateFromRotationMatrix( const Matrix& value, Quaternion& resu
     result.x = ( value._31 + value._13 ) * s;
     result.y = ( value._32 + value._23 ) * s;
     result.w = ( value._12 - value._21 ) * s;
+}
+
+//-------------------------------------------------------------------------------------------------
+//      回転角を取得します.
+//-------------------------------------------------------------------------------------------------
+ASVK_INLINE
+Vector3 Quaternion::ToAxisAngle( const Quaternion& value )
+{
+    auto x2 = value.x * value.x;
+    auto y2 = value.y * value.y;
+    auto z2 = value.z * value.z;
+    auto w2 = value.w * value.w;
+    auto mag = x2 + y2 + z2 + w2;
+    auto test = value.x * value.y + value.z * value.w;
+    auto rad = F_PIDIV2;
+
+    if (test > rad * mag)
+    {
+        return Vector3(
+            0.0f,
+            2.0f * std::atan2(value.x, value.w),
+            F_PIDIV2);
+    }
+    if (test < -rad * mag)
+    {
+        return Vector3(
+            0.0f,
+            -2.0f * std::atan2(value.x, value.w),
+            -F_PIDIV2);
+    }
+
+    return Vector3(
+        std::atan2(2.0f * value.x * value.w - 2.0f * value.y * value.z, -x2 + y2 - z2 + w2),
+        std::atan2(2.0f * value.y * value.w - 2.0f * value.x * value.z,  x2 - y2 - z2 + w2),
+        std::asin (2.0f * test / mag));
+}
+
+
+//-------------------------------------------------------------------------------------------------
+//      回転角を取得します.
+//-------------------------------------------------------------------------------------------------
+ASVK_INLINE
+void Quaternion::ToAxisAngle( const Quaternion& value, Vector3& result )
+{
+    auto x2 = value.x * value.x;
+    auto y2 = value.y * value.y;
+    auto z2 = value.z * value.z;
+    auto w2 = value.w * value.w;
+    auto mag = x2 + y2 + z2 + w2;
+    auto test = value.x * value.y + value.z * value.w;
+    auto rad = F_PIDIV2;
+
+    if (test > rad * mag)
+    {
+        result.x = 0.0f;
+        result.y = 2.0f * std::atan2(value.x, value.w);
+        result.z = F_PIDIV2;
+    }
+    if (test < -rad * mag)
+    {
+        result.x = 0.0f;
+        result.y = -2.0f * std::atan2(value.x, value.w);
+        result.z = -F_PIDIV2;
+    }
+    else
+    {
+        result.x = std::atan2(2.0f * value.x * value.w - 2.0f * value.y * value.z, -x2 + y2 - z2 + w2);
+        result.y = std::atan2(2.0f * value.y * value.w - 2.0f * value.x * value.z,  x2 - y2 - z2 + w2);
+        result.z = std::asin (2.0f * test / mag);
+    }
 }
 
 //-------------------------------------------------------------------------------------------------
