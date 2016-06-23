@@ -537,9 +537,6 @@ bool App::InitVulkan()
             ELOG( "Error : vkQueueWaitIdle() Failed." );
             return false;
         }
-
-        // コマンドリストをリセット.
-        m_CommandList.Reset();
     }
 
     // 正常終了.

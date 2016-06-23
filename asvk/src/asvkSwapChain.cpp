@@ -62,6 +62,9 @@ bool SwapChain::Init(DeviceMgr* pDeviceMgr, VkCommandBuffer commandBuffer,const 
         }
     }
 
+    // 物理デバイス取得.
+    auto gpu = pDeviceMgr->GetPhysicalDevice()[0].Gpu;
+
     // サーフェイス生成情報を設定する.
     VkWin32SurfaceCreateInfoKHR surfaceInfo = {};
     surfaceInfo.sType       = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
@@ -78,8 +81,13 @@ bool SwapChain::Init(DeviceMgr* pDeviceMgr, VkCommandBuffer commandBuffer,const 
         return false;
     }
 
-    // 物理デバイス取得.
-    auto gpu = pDeviceMgr->GetPhysicalDevice()[0].Gpu;
+    VkBool32 support = VK_FALSE;
+    result = vkGetPhysicalDeviceSurfaceSupportKHR(gpu,  pDeviceMgr->GetGraphicsQueue()->GetFamilyIndex(), m_Surface, &support);
+    if ( result != VK_SUCCESS )
+    {
+        ELOG( "Error : vkGetPhysicalDeviceSurfaceSupportKHR() Failed." );
+        return false;
+    }
 
     uint32_t count  = 0;
     result = vkGetPhysicalDeviceSurfaceFormatsKHR(gpu, m_Surface, &count, nullptr);
@@ -369,11 +377,13 @@ void SwapChain::Term(DeviceMgr* pDeviceMgr)
 void SwapChain::Present(uint64_t timeout)
 {
     VkPresentInfoKHR present = {};
-    present.sType           = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    present.pNext           = nullptr;
-    present.swapchainCount  = 1;
-    present.pSwapchains     = &m_SwapChain;
-    present.pImageIndices   = &m_BufferIndex;
+    present.sType               = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    present.pNext               = nullptr;
+    present.swapchainCount      = 1;
+    present.waitSemaphoreCount  = 1;
+    present.pWaitSemaphores     = &m_Semaphore;
+    present.pSwapchains         = &m_SwapChain;
+    present.pImageIndices       = &m_BufferIndex;
 
     // 表示.
     auto result = vkQueuePresentKHR(m_pQueue->GetQueue(), &present);

@@ -85,22 +85,22 @@ VkBool32 VKAPI_CALL DebugReport
     if (msgFlags & VK_DEBUG_REPORT_ERROR_BIT_EXT)
     {
         asvk::SystemLogger::GetInstance().LogA( asvk::LogLevel::Error,
-        "Error : [%s] Code %d : %s", pLayerPrefix, msgCode, pMsg);
+        "Error : [%s] Code %d : %s\n", pLayerPrefix, msgCode, pMsg);
     }
     else if (msgFlags & VK_DEBUG_REPORT_WARNING_BIT_EXT) 
     {
         asvk::SystemLogger::GetInstance().LogA( asvk::LogLevel::Warning,
-        "Warning : [%s] Code %d : %s", pLayerPrefix, msgCode, pMsg);
+        "Warning : [%s] Code %d : %s\n", pLayerPrefix, msgCode, pMsg);
     }
     else if (msgFlags & VK_DEBUG_REPORT_INFORMATION_BIT_EXT)
     {
         asvk::SystemLogger::GetInstance().LogA( asvk::LogLevel::Info,
-        "Info : [%s] Code %d : %s", pLayerPrefix, msgCode, pMsg);
+        "Info : [%s] Code %d : %s\n", pLayerPrefix, msgCode, pMsg);
     }
     else if (msgFlags & VK_DEBUG_REPORT_DEBUG_BIT_EXT)
     {
         asvk::SystemLogger::GetInstance().LogA( asvk::LogLevel::Debug,
-        "Info : [%s] Code %d : %s", pLayerPrefix, msgCode, pMsg);
+        "Info : [%s] Code %d : %s\n", pLayerPrefix, msgCode, pMsg);
     }
 
     return false;
@@ -156,12 +156,25 @@ DeviceMgr::~DeviceMgr()
 //-------------------------------------------------------------------------------------------------
 bool DeviceMgr::Init()
 {
+    #if ASVK_IS_DEBUG
+        std::array<const char*, 3> layerExtensions;
+        layerExtensions[0] = VK_KHR_SURFACE_EXTENSION_NAME;
+        layerExtensions[1] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+        layerExtensions[2] = VK_EXT_DEBUG_REPORT_EXTENSION_NAME;
+
+        const char* layer[]     = { "VK_LAYER_LUNARG_standard_validation" };
+        uint32_t    layerCount  = 1;
+    #else
+        std::array<const char*, 2> layerExtensions;
+        layerExtensions[0] = VK_KHR_SURFACE_EXTENSION_NAME;
+        layerExtensions[1] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
+
+        const char* layer[]     = { nullptr };
+        uint32_t    layerCount  = 0;
+    #endif
+
     // インスタンスの生成.
     {
-        std::array<const char*, 2> extensions;
-        extensions[0] = VK_KHR_SURFACE_EXTENSION_NAME;
-        extensions[1] = VK_KHR_WIN32_SURFACE_EXTENSION_NAME;
- 
         VkApplicationInfo appInfo = {};
         appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         appInfo.pNext              = nullptr;
@@ -176,10 +189,10 @@ bool DeviceMgr::Init()
         instanceInfo.pNext                      = nullptr;
         instanceInfo.flags                      = 0;
         instanceInfo.pApplicationInfo           = &appInfo;
-        instanceInfo.enabledLayerCount          = 0;
-        instanceInfo.ppEnabledLayerNames        = nullptr;
-        instanceInfo.enabledExtensionCount      = static_cast<uint32_t>(extensions.size());
-        instanceInfo.ppEnabledExtensionNames    = extensions.data();
+        instanceInfo.enabledLayerCount          = layerCount;
+        instanceInfo.ppEnabledLayerNames        = layer;
+        instanceInfo.enabledExtensionCount      = static_cast<uint32_t>(layerExtensions.size());
+        instanceInfo.ppEnabledExtensionNames    = layerExtensions.data();
 
         m_Allocator.pfnAllocation         = Alloc;
         m_Allocator.pfnFree               = Free;
@@ -215,8 +228,7 @@ bool DeviceMgr::Init()
             info.pUserData      = nullptr;
             info.flags          = VK_DEBUG_REPORT_ERROR_BIT_EXT 
                                 | VK_DEBUG_REPORT_WARNING_BIT_EXT
-                                | VK_DEBUG_REPORT_INFORMATION_BIT_EXT 
-                                | VK_DEBUG_REPORT_DEBUG_BIT_EXT;
+                                | VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
 
             auto result = m_CreateDebugReportCallback(m_Instance, &info, nullptr, &m_DebugReporter);
             if (result != VK_SUCCESS)
@@ -270,8 +282,16 @@ bool DeviceMgr::Init()
 
         uint32_t familyIndex = 0;
 
+        std::vector<float> priorities;
+        auto offset = 0;
+
         for(auto i=0u; i<propCount; ++i)
         {
+            for(auto j=0u; j<props[i].queueCount; ++j)
+            { priorities.push_back( 0.0f ); }
+
+            offset += props[i].queueCount;
+
             if ((props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
              && (props[i].queueFlags & VK_QUEUE_COMPUTE_BIT))
             { 
@@ -279,13 +299,16 @@ bool DeviceMgr::Init()
             }
         }
 
-        VkDeviceQueueCreateInfo queueInfo;
-        float queuePriorities[] = { 0.0f, 0.0f };
+        VkDeviceQueueCreateInfo queueInfo = {};
         queueInfo.sType              = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
         queueInfo.pNext              = nullptr;
+        queueInfo.flags              = 0;
         queueInfo.queueCount         = props[familyIndex].queueCount;
         queueInfo.queueFamilyIndex   = familyIndex;
-        queueInfo.pQueuePriorities   = queuePriorities;
+        queueInfo.pQueuePriorities   = priorities.data();
+
+        const char* deviceExtensions[]   = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+        uint32_t    deviceExtensionCount = 1;
 
         VkDeviceCreateInfo deviceInfo = {};
         deviceInfo.sType                    = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -294,8 +317,8 @@ bool DeviceMgr::Init()
         deviceInfo.pQueueCreateInfos        = &queueInfo;
         deviceInfo.enabledLayerCount        = 0;
         deviceInfo.ppEnabledLayerNames      = nullptr;
-        deviceInfo.enabledExtensionCount    = 0;
-        deviceInfo.ppEnabledExtensionNames  = nullptr;
+        deviceInfo.enabledExtensionCount    = deviceExtensionCount;
+        deviceInfo.ppEnabledExtensionNames  = deviceExtensions;
         deviceInfo.pEnabledFeatures         = nullptr;
 
         auto result = vkCreateDevice(gpu, &deviceInfo, nullptr, &m_Device);
@@ -324,6 +347,17 @@ void DeviceMgr::Term()
 
     if (m_Device != null_handle)
     { vkDestroyDevice(m_Device, nullptr); }
+
+#if ASVK_IS_DEBUG
+    if (m_DebugReporter != nullptr)
+    {
+        m_DestroyDebugReportCallback(m_Instance, m_DebugReporter, nullptr);
+        m_DebugReporter              = null_handle;
+        m_CreateDebugReportCallback  = nullptr;
+        m_DestroyDebugReportCallback = nullptr;
+        m_DebugReportMessage         = nullptr;
+    }
+#endif
 
     if (m_Instance != null_handle)
     { vkDestroyInstance(m_Instance, &m_Allocator); }

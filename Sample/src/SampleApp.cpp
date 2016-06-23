@@ -90,15 +90,34 @@ bool SampleApp::OnInit()
             return false;
         }
 
+        auto props = m_DeviceMgr.GetPhysicalDevice()[0].MemoryProps;
+
         // メモリ要件を取得.
         VkMemoryRequirements requirements;
         vkGetBufferMemoryRequirements(device, m_Mesh.Buffer, &requirements);
+
+        auto propMask  = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
+        auto typeBits  = requirements.memoryTypeBits;
+        auto typeIndex = 0u;
+        for (auto i=0u; i<32; ++i)
+        {
+            auto& propFlags = props.memoryTypes[i].propertyFlags;
+            if ((typeBits & 0x1) == 0x1)
+            {
+                if ((propFlags & propMask) == propMask)
+                {
+                    typeIndex = i;
+                    break;
+                }
+            }
+            typeBits >>= 1;
+    }
 
         // メモリ割り当て情報を設定.
         VkMemoryAllocateInfo allocInfo = {};
         allocInfo.sType             = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.pNext             = nullptr;
-        allocInfo.memoryTypeIndex   = 0;
+        allocInfo.memoryTypeIndex   = typeIndex;
         allocInfo.allocationSize    = requirements.size;
 
         // メモリを確保.
