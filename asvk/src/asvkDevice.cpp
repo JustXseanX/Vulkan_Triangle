@@ -315,8 +315,8 @@ bool DeviceMgr::Init()
         deviceInfo.pNext                    = nullptr;
         deviceInfo.queueCreateInfoCount     = 1;
         deviceInfo.pQueueCreateInfos        = &queueInfo;
-        deviceInfo.enabledLayerCount        = 0;
-        deviceInfo.ppEnabledLayerNames      = nullptr;
+        deviceInfo.enabledLayerCount        = layerCount;
+        deviceInfo.ppEnabledLayerNames      = layer;
         deviceInfo.enabledExtensionCount    = deviceExtensionCount;
         deviceInfo.ppEnabledExtensionNames  = deviceExtensions;
         deviceInfo.pEnabledFeatures         = nullptr;
